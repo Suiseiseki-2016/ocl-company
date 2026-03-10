@@ -3,20 +3,15 @@ use std::process::Command;
 
 /// Invoke a named openclaw agent with a task message.
 ///
-/// openclaw loads the agent's soul.md and skills/ from `agents_dir/{id}/`.
-/// We only pass the task-specific message — not the assembled soul+skills+memory.
+/// openclaw loads the agent's context by name.
+/// We only pass the task-specific message.
 ///
 /// Equivalent to:
-///   openclaw agent --agent researcher \
-///                  --agents-dir ./agents \
-///                  --message "..." \
-///                  --deliver
-pub fn invoke_agent(agent_id: &str, message: &str, agents_dir: &Path) -> Result<String, String> {
-    let dir = agents_dir.to_str().unwrap_or(".");
-
+///   openclaw agent --agent researcher -m "..." --deliver
+pub fn invoke_agent(agent_id: &str, message: &str, _agents_dir: &Path) -> Result<String, String> {
     let attempts: &[(&str, &[&str])] = &[
-        ("openclaw", &["agent", "--agent", agent_id, "--agents-dir", dir, "--message", message, "--deliver"]),
-        ("ocl",      &["agent", "--agent", agent_id, "--agents-dir", dir, "--message", message, "--deliver"]),
+        ("openclaw", &["agent", "--agent", agent_id, "-m", message, "--deliver"]),
+        ("ocl",      &["agent", "--agent", agent_id, "-m", message, "--deliver"]),
     ];
 
     for (cmd, args) in attempts {
