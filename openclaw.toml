@@ -1,0 +1,25 @@
+[tool]
+name        = "ocl-company"
+version     = "0.1.0"
+description = "Multi-agent pipeline framework — run tasks through a team of named agents with board review"
+author      = ""
+license     = "MIT"
+
+[install]
+# Build and install the binary using cargo
+method  = "cargo"
+binary  = "ocl-company"
+
+[commands]
+# Exposed to openclaw after installation
+init    = "ocl-company init [--project <path>]"
+run     = "ocl-company run --task <task> | --task-file <path> | --project <path>"
+status  = "ocl-company status [--project <path>]"
+hire    = "ocl-company hire <name> [--description <desc>] [--project <path>]"
+fire    = "ocl-company fire <name> [--project <path>]"
+
+[agent]
+# When openclaw calls ocl-company as a tool inside an agent session,
+# it passes the task via --task and reads the result from stdout.
+entry       = "ocl-company run --task \"{input}\""
+output      = "stdout"
