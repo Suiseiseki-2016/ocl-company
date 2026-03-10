@@ -41,38 +41,23 @@ The longer you run the team, the better it gets.
 
 ---
 
-## Installation
-
-**Requirements:** Rust toolchain, OpenClaw CLI (`openclaw` or `ocl` on PATH).
-
-```bash
-cargo install --git https://github.com/openclaw/ocl-company
-```
-
-Or build from source:
-```bash
-git clone https://github.com/openclaw/ocl-company
-cd ocl-company
-cargo build --release
-cp target/release/ocl-company ~/.local/bin/
-```
-
----
-
 ## Quick Start
 
+Tell your OpenClaw agent:
+
+> Install ocl-company from https://github.com/Suiseiseki-2016/ocl-company.git,
+> set up a team in the current directory, and run a task.
+
+OpenClaw will fetch the repo, build and install the binary, then execute:
+
 ```bash
-# Create a new team project
-mkdir my-team && cd my-team
+cargo install --git https://github.com/Suiseiseki-2016/ocl-company.git
 ocl-company init
-
-# The default team is ready — edit to customise
-$EDITOR team.yaml
-$EDITOR agents/researcher/soul.md
-
-# Run a task — result printed to stdout
-ocl-company run --task "Compare the top Rust async runtimes"
+ocl-company run --task "your task here"
 ```
+
+The default team is ready to use immediately after `init`.
+Edit `team.yaml` and files under `agents/` to customise the team for your domain.
 
 ---
 

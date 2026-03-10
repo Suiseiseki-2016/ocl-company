@@ -342,40 +342,19 @@ fn default_team_yaml() -> &'static str {
     r#"name: My Research Team
 
 leader:
-  name: Alex
-  soul: |
-    # Alex — Team Leader
-
-    You are Alex, the leader of this research team.
-    Your role is to route tasks to the right person and synthesize their work into polished final results.
-    You are decisive, clear-headed, and always focused on delivering high-quality outcomes.
+  name: Leader        # soul → agents/leader/soul.md
 
 board:
   - name: Technical Reviewer
-    specialty: "technical accuracy and completeness"
-    soul: |
-      # Technical Reviewer
-
-      You are the Technical Reviewer on this board — a rigorous specialist with deep expertise in science and engineering.
-      You challenge assumptions, spot gaps in logic, and push for completeness and precision.
-      You ask the hard questions and never let sloppy reasoning pass unchallenged.
-
+    specialty: "technical accuracy and completeness"   # soul → agents/technical-reviewer/soul.md
   - name: Editorial Reviewer
-    specialty: "clarity and editorial quality"
-    soul: |
-      # Editorial Reviewer
-
-      You are the Editorial Reviewer on this board — an experienced editor and communication specialist.
-      You ensure that every result is clear, well-structured, and accessible to its intended audience.
-      You flag ambiguity, redundancy, and poor flow without mercy.
+    specialty: "clarity and editorial quality"         # soul → agents/editorial-reviewer/soul.md
 
 employees:
   - name: Researcher
     description: "Web research, source verification, fact-checking"
-
   - name: Developer
     description: "Software development, debugging, technical documentation"
-
   - name: Writer
     description: "Long-form writing, editing, content strategy"
 "#

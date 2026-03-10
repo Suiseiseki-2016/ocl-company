@@ -1,7 +1,7 @@
 name: My Research Team
 
 leader:
-  name: Alex          # soul → agents/alex/soul.md
+  name: Leader        # soul → agents/leader/soul.md
 
 board:
   - name: Technical Reviewer
