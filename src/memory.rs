@@ -151,26 +151,13 @@ fn read_recent_md_files(dir: &Path, limit: usize) -> String {
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("md"))
         .collect();
     entries.sort_by_key(|e| e.file_name());
-    entries
+    // Take last `limit` entries in chronological order — no double-reverse needed (#9)
+    let start = entries.len().saturating_sub(limit);
+    entries[start..]
         .iter()
-        .rev()
-        .take(limit)
-        .rev()
         .filter_map(|e| fs::read_to_string(e.path()).ok())
         .collect::<Vec<_>>()
         .join("\n\n")
-}
-
-#[allow(dead_code)]
-pub fn write_skill_file(
-    agent_id: &str,
-    filename: &str,
-    content: &str,
-    project_dir: &Path,
-) -> Result<(), String> {
-    let skills_dir = get_skills_dir(agent_id, project_dir);
-    fs::create_dir_all(&skills_dir).map_err(|e| e.to_string())?;
-    write_if_missing(&skills_dir.join(filename), content)
 }
 
 fn write_if_missing(path: &PathBuf, content: &str) -> Result<(), String> {
@@ -199,5 +186,57 @@ fn title_case(s: &str) -> String {
     match c.next() {
         None => String::new(),
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    fn write_md(dir: &std::path::Path, name: &str, content: &str) {
+        fs::write(dir.join(name), content).unwrap();
+    }
+
+    #[test]
+    fn read_recent_md_files_empty_dir() {
+        let dir = TempDir::new().unwrap();
+        let result = read_recent_md_files(dir.path(), 5);
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn read_recent_md_files_respects_limit() {
+        let dir = TempDir::new().unwrap();
+        write_md(dir.path(), "2024-01-01.md", "a");
+        write_md(dir.path(), "2024-01-02.md", "b");
+        write_md(dir.path(), "2024-01-03.md", "c");
+        let result = read_recent_md_files(dir.path(), 2);
+        // Should contain the 2 most recent: b and c
+        assert!(result.contains('b'), "expected 'b' in: {}", result);
+        assert!(result.contains('c'), "expected 'c' in: {}", result);
+        assert!(!result.contains('a'), "expected 'a' excluded from: {}", result);
+    }
+
+    #[test]
+    fn read_recent_md_files_chronological_order() {
+        let dir = TempDir::new().unwrap();
+        write_md(dir.path(), "2024-01-01.md", "first");
+        write_md(dir.path(), "2024-01-02.md", "second");
+        let result = read_recent_md_files(dir.path(), 5);
+        let first_pos = result.find("first").unwrap();
+        let second_pos = result.find("second").unwrap();
+        assert!(first_pos < second_pos, "entries should be in chronological order");
+    }
+
+    #[test]
+    fn slugify_basic() {
+        assert_eq!(slugify("Hello World"), "hello-world");
+        assert_eq!(slugify("foo--bar"), "foo-bar");
     }
 }

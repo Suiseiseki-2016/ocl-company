@@ -191,7 +191,10 @@ fn cmd_run(args: RunArgs) {
                     .parent()
                     .unwrap_or(Path::new("."))
                     .join(format!("{}.result.json", id));
-                let json = serde_json::to_string_pretty(&result_obj).unwrap();
+                let json = match serde_json::to_string_pretty(&result_obj) {
+                    Ok(j) => j,
+                    Err(e) => { die(&format!("Error serializing result: {}", e)); }
+                };
                 fs::write(&result_path, json)
                     .unwrap_or_else(|e| eprintln!("Error writing result: {}", e));
                 println!("Result written to {}", result_path.display());
@@ -309,6 +312,9 @@ fn cmd_status(project: &Path) {
 // ---------------------------------------------------------------------------
 
 fn cmd_hire(name: &str, description: &str, project: &Path) {
+    if let Err(e) = crate::config::validate_name(name, "employee") {
+        die(&format!("Invalid name: {}", e));
+    }
     let mut config = load_team_or_exit(project);
     if config.employees.iter().any(|e| e.name.eq_ignore_ascii_case(name)) {
         eprintln!("Employee '{}' already exists.", name);
@@ -355,8 +361,12 @@ fn die(msg: &str) -> ! {
     std::process::exit(1);
 }
 
+/// Truncate to at most `max` Unicode characters — never splits a multi-byte char (#2).
 fn truncate_str(s: &str, max: usize) -> &str {
-    if s.len() <= max { s } else { &s[..max] }
+    match s.char_indices().nth(max) {
+        Some((byte_pos, _)) => &s[..byte_pos],
+        None => s,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -591,3 +601,29 @@ employees:
   - name: Writer
     description: "Long-form writing, editing, content strategy, documentation"
 "#;
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn truncate_str_ascii() {
+        assert_eq!(truncate_str("hello world", 5), "hello");
+        assert_eq!(truncate_str("hi", 100), "hi");
+        assert_eq!(truncate_str("", 5), "");
+    }
+
+    #[test]
+    fn truncate_str_multibyte() {
+        let s = "日本語テスト";
+        assert_eq!(truncate_str(s, 3), "日本語");
+        assert_eq!(truncate_str(s, 0), "");
+        // must not panic at byte boundaries
+        let _ = truncate_str(s, 1);
+        let _ = truncate_str(s, 2);
+    }
+}

@@ -39,7 +39,60 @@ pub fn load_team(project: &Path) -> Result<TeamConfig, String> {
         ));
     }
     let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    serde_yaml::from_str(&content).map_err(|e| e.to_string())
+    let config: TeamConfig = serde_yaml::from_str(&content).map_err(|e| e.to_string())?;
+    validate_team(&config)?;
+    Ok(config)
+}
+
+/// Validate that all names are safe to use as filesystem path components.
+fn validate_team(config: &TeamConfig) -> Result<(), String> {
+    validate_name(&config.leader.name, "leader")?;
+    for member in &config.board {
+        validate_name(&member.name, "board member")?;
+    }
+    for emp in &config.employees {
+        validate_name(&emp.name, "employee")?;
+    }
+    Ok(())
+}
+
+/// Reject names that are empty, contain path separators, or attempt directory traversal.
+pub fn validate_name(name: &str, role: &str) -> Result<(), String> {
+    if name.trim().is_empty() {
+        return Err(format!("{} name must not be empty", role));
+    }
+    if name.contains('/') || name.contains('\\') {
+        return Err(format!("{} name '{}' must not contain path separators", role, name));
+    }
+    if name == ".." || name.starts_with("../") || name.contains("/../") {
+        return Err(format!("{} name '{}' must not traverse directories", role, name));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_name_ok() {
+        assert!(validate_name("Alice", "employee").is_ok());
+        assert!(validate_name("Technical Reviewer", "board").is_ok());
+    }
+
+    #[test]
+    fn validate_name_empty() {
+        assert!(validate_name("", "employee").is_err());
+        assert!(validate_name("   ", "employee").is_err());
+    }
+
+    #[test]
+    fn validate_name_path_traversal() {
+        assert!(validate_name("../../etc/passwd", "employee").is_err());
+        assert!(validate_name("foo/bar", "employee").is_err());
+        assert!(validate_name("foo\\bar", "employee").is_err());
+        assert!(validate_name("..", "employee").is_err());
+    }
 }
 
 pub fn save_team(project: &Path, config: &TeamConfig) -> Result<(), String> {
